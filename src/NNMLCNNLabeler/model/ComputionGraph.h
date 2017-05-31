@@ -8,12 +8,15 @@
 struct GraphBuilder{
 public:
 	const static int max_sentence_length = 1024;
+	const static int max_layer_size = 10;
 
 public:
 	// node instances
 	vector<LookupNode> _word_inputs;
-	WindowBuilder _word_window;
-	vector<UniNode> _hidden;
+
+	vector<WindowBuilder> _word_window_layers;
+	vector<vector<UniNode> > _hidden_layers;
+
 
 	AvgPoolNode _avg_pooling;
 	MaxPoolNode _max_pooling;
@@ -35,10 +38,17 @@ public:
 
 public:
 	//allocate enough nodes 
-	inline void createNodes(int sent_length){
+	inline void createNodes(int sent_length, int layer_size){
 		_word_inputs.resize(sent_length);
-		_word_window.resize(sent_length);
-		_hidden.resize(sent_length);
+
+		if (layer_size < 1)
+			layer_size = 1;
+		_word_window_layers.resize(layer_size);
+		_hidden_layers.resize(layer_size);
+		for (int idx = 0; idx < layer_size; idx++) {
+			_word_window_layers[idx].resize(sent_length);
+			_hidden_layers[idx].resize(sent_length);
+		}
 
 		_avg_pooling.setParam(sent_length);
 		_max_pooling.setParam(sent_length);
@@ -47,8 +57,11 @@ public:
 
 	inline void clear(){
 		_word_inputs.clear();
-		_word_window.clear();
-		_hidden.clear();
+		int layer_size = _word_window_layers.size();
+		for (int idx = 0; idx < layer_size; idx++) {
+			_word_window_layers[idx].clear();
+			_hidden_layers[idx].clear();
+		}
 	}
 
 public:
@@ -57,10 +70,19 @@ public:
 		for (int idx = 0; idx < _word_inputs.size(); idx++) {
 			_word_inputs[idx].setParam(&model.words);
 			_word_inputs[idx].init(opts.wordDim, mem);
-			_hidden[idx].setParam(&model.hidden_linear);
-			_hidden[idx].init(opts.hiddenSize, mem);
+			int cnnLayerSize = _word_window_layers.size(); 
+			for (int idy = 0; idy < cnnLayerSize; idy++) {
+				_hidden_layers[idy][idx].setParam(&model.hidden_linear_layers[idy]);
+				_hidden_layers[idy][idx].init(opts.hiddenSize, mem);
+			}
 		}
-		_word_window.init(opts.wordDim, opts.wordContext, mem);
+
+		_word_window_layers[0].init(opts.wordDim, opts.wordContext, mem);
+		int cnnLayerSize = _word_window_layers.size(); 
+		for (int idy = 1; idy < cnnLayerSize; idy++) {
+			_word_window_layers[idy].init(opts.hiddenSize, opts.wordContext, mem);
+		}
+
 		_avg_pooling.init(opts.hiddenSize, mem);
 		_max_pooling.init(opts.hiddenSize, mem);
 		_min_pooling.init(opts.hiddenSize, mem);
@@ -82,14 +104,26 @@ public:
 		for (int i = 0; i < words_num; i++) {
 			_word_inputs[i].forward(_pcg, feature.m_words[i]);
 		}
-		_word_window.forward(_pcg, getPNodes(_word_inputs, words_num));
 
+		_word_window_layers[0].forward(_pcg, getPNodes(_word_inputs, words_num));
 		for (int i = 0; i < words_num; i++) {
-			_hidden[i].forward(_pcg, &_word_window._outputs[i]);
+			_hidden_layers[0][i].forward(_pcg, &_word_window_layers[0]._outputs[i]);
 		}
-		_avg_pooling.forward(_pcg, getPNodes(_hidden, words_num));
-		_max_pooling.forward(_pcg, getPNodes(_hidden, words_num));
-		_min_pooling.forward(_pcg, getPNodes(_hidden, words_num));
+
+		int cnnLayerSize = _word_window_layers.size();
+		for(int i = 1; i < cnnLayerSize; i++) {
+			_word_window_layers[i].forward(_pcg, getPNodes(_hidden_layers[i - 1], words_num));
+
+			for (int j = 0; j < words_num; j++) {
+				_hidden_layers[i][j].forward(_pcg, &_word_window_layers[i]._outputs[j]);
+			}
+
+		}
+
+		_avg_pooling.forward(_pcg, getPNodes(_hidden_layers[cnnLayerSize - 1], words_num));
+		_max_pooling.forward(_pcg, getPNodes(_hidden_layers[cnnLayerSize - 1], words_num));
+		_min_pooling.forward(_pcg, getPNodes(_hidden_layers[cnnLayerSize - 1], words_num));
+
 		_concat.forward(_pcg, &_avg_pooling, &_max_pooling, &_min_pooling);
 		_neural_output.forward(_pcg, &_concat);
 		

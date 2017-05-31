@@ -31,6 +31,7 @@ public:
 
 
 
+	int cnnLayerSize;
 	int verboseIter;
 	bool saveIntermediate;
 	bool train;
@@ -58,6 +59,7 @@ public:
 		wordcontext = 2;
 		wordEmbFineTune = true;
 
+		cnnLayerSize = 2;
 		verboseIter = 100;
 		saveIntermediate = true;
 		train = false;
@@ -106,6 +108,8 @@ public:
 			if (pr.first == "wordEmbFineTune")
 				wordEmbFineTune = (pr.second == "true") ? true : false;
 
+			if (pr.first == "cnnLayerSize")
+				cnnLayerSize = atoi(pr.second.c_str());
 			if (pr.first == "verboseIter")
 				verboseIter = atoi(pr.second.c_str());
 			if (pr.first == "train")
@@ -142,6 +146,7 @@ public:
 		std::cout << "wordcontext = " << wordcontext << std::endl;
 		std::cout << "wordEmbFineTune = " << wordEmbFineTune << std::endl;
 
+		std::cout << "cnnLayerSize = " << cnnLayerSize << std::endl;
 		std::cout << "verboseIter = " << verboseIter << std::endl;
 		std::cout << "saveItermediate = " << saveIntermediate << std::endl;
 		std::cout << "train = " << train << std::endl;

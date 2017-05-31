@@ -55,7 +55,7 @@ public:
     _builders.resize(_hyperparams.batch);
 
     for (int idx = 0; idx < _hyperparams.batch; idx++) {
-      _builders[idx].createNodes(GraphBuilder::max_sentence_length);
+      _builders[idx].createNodes(GraphBuilder::max_sentence_length, _hyperparams.cnnLayerSize);
       _builders[idx].initial(&_cg, _modelparams, _hyperparams, &_aligned_mem);
     }
 
@@ -80,7 +80,7 @@ public:
     _builders.resize(_hyperparams.batch);
 
     for (int idx = 0; idx < _hyperparams.batch; idx++) {
-      _builders[idx].createNodes(GraphBuilder::max_sentence_length);
+      _builders[idx].createNodes(GraphBuilder::max_sentence_length, _hyperparams.cnnLayerSize);
       _builders[idx].initial(&_cg, _modelparams, _hyperparams, &_aligned_mem);
     }
 
@@ -142,8 +142,8 @@ public:
 
 
 	void updateModel() {
-		//_ada.update();
-		_ada.update(5.0);
+		_ada.update();
+		//_ada.update(5.0);
 	}
 
 	void checkgrad(const vector<Example>& examples, int iter){
