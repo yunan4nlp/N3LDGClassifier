@@ -18,21 +18,18 @@ public:
 
 	Instance *getNext() {
 		m_instance.clear();
-		string strLine1, strLine2;
+		string strLine1;
 		if (!my_getline(m_inf, strLine1))
-			return NULL;
-		if (!my_getline(m_inf, strLine2))
 			return NULL;
 		if (strLine1.empty())
 			return NULL;
 
 
 		vector<string> vecInfo;
-		split_bychars(strLine1, vecInfo, "\t");
-		m_instance.m_label = vecInfo[0];
+		split_bychars(strLine1, vecInfo, "||| ");
+		m_instance.m_label = vecInfo[vecInfo.size() - 1];
 
-		split_bychar(vecInfo[1], m_instance.m_words, ' ');
-		split_bychar(strLine2, m_instance.m_sparse_feats, ' ');
+		split_bychar(vecInfo[0], m_instance.m_words, ' ');
 		return &m_instance;
 	}
 };

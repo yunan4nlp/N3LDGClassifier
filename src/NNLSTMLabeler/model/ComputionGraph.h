@@ -13,7 +13,8 @@ public:
 	// node instances
 	vector<LookupNode> _word_inputs;
 	WindowBuilder _word_window;
-	vector<UniNode> _hidden;
+
+	LSTM1Builder _lstm;
 
 	AvgPoolNode _avg_pooling;
 	MaxPoolNode _max_pooling;
@@ -38,7 +39,7 @@ public:
 	inline void createNodes(int sent_length){
 		_word_inputs.resize(sent_length);
 		_word_window.resize(sent_length);
-		_hidden.resize(sent_length);
+		_lstm.resize(sent_length);
 
 		_avg_pooling.setParam(sent_length);
 		_max_pooling.setParam(sent_length);
@@ -48,7 +49,7 @@ public:
 	inline void clear(){
 		_word_inputs.clear();
 		_word_window.clear();
-		_hidden.clear();
+		_lstm.clear();
 	}
 
 public:
@@ -56,11 +57,10 @@ public:
     _pcg = pcg;
 		for (int idx = 0; idx < _word_inputs.size(); idx++) {
 			_word_inputs[idx].setParam(&model.words);
-			_word_inputs[idx].init(opts.wordDim, opts.dropProb, mem);
-			_hidden[idx].setParam(&model.hidden_linear);
-			_hidden[idx].init(opts.hiddenSize, -1, mem);
+			_word_inputs[idx].init(opts.wordDim, opts.dropProb,mem);
 		}
 		_word_window.init(opts.wordDim, opts.wordContext, mem);
+		_lstm.init(&model.lstm_param, opts.dropProb, true, mem);
 		_avg_pooling.init(opts.hiddenSize, -1, mem);
 		_max_pooling.init(opts.hiddenSize, -1, mem);
 		_min_pooling.init(opts.hiddenSize, -1, mem);
@@ -84,12 +84,11 @@ public:
 		}
 		_word_window.forward(_pcg, getPNodes(_word_inputs, words_num));
 
-		for (int i = 0; i < words_num; i++) {
-			_hidden[i].forward(_pcg, &_word_window._outputs[i]);
-		}
-		_avg_pooling.forward(_pcg, getPNodes(_hidden, words_num));
-		_max_pooling.forward(_pcg, getPNodes(_hidden, words_num));
-		_min_pooling.forward(_pcg, getPNodes(_hidden, words_num));
+		_lstm.forward(_pcg, getPNodes(_word_window._outputs, words_num));
+
+		_avg_pooling.forward(_pcg, getPNodes(_lstm._hiddens, words_num));
+		_max_pooling.forward(_pcg, getPNodes(_lstm._hiddens, words_num));
+		_min_pooling.forward(_pcg, getPNodes(_lstm._hiddens, words_num));
 		_concat.forward(_pcg, &_avg_pooling, &_max_pooling, &_min_pooling);
 		_neural_output.forward(_pcg, &_concat);
 		

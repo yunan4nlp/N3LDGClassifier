@@ -1,5 +1,7 @@
 cmake .. -DEIGEN3_DIR=/d/eigen/  -DN3LDG_DIR=/d/N3LDG/ 
 
-cmake .. -DEIGEN3_DIR=C:\eigen  -DN3LDG_DIR=D:\N3LDG
+cmake .. -DEIGEN3_DIR=E:\vs_workspace\N3LDG_Debug\eigen  -DN3LDG_DIR=E:\vs_workspace\N3LDG_Debug\N3LDG
 
 -l -train data\phone_data\phone_train.txt -dev data\phone_data\phone_dev.txt -test data\phone_data\phone_test.txt -option data\phone_data\option.debug
+
+-l -train data\raw.clean.train -dev data\raw.clean.dev -test data\raw.clean.test -option data\option.debug

@@ -69,11 +69,11 @@ public:
     _pcg = pcg;
 		for (int idx = 0; idx < _word_inputs.size(); idx++) {
 			_word_inputs[idx].setParam(&model.words);
-			_word_inputs[idx].init(opts.wordDim, mem);
+			_word_inputs[idx].init(opts.wordDim, opts.dropProb, mem);
 			int cnnLayerSize = _word_window_layers.size(); 
 			for (int idy = 0; idy < cnnLayerSize; idy++) {
 				_hidden_layers[idy][idx].setParam(&model.hidden_linear_layers[idy]);
-				_hidden_layers[idy][idx].init(opts.hiddenSize, mem);
+				_hidden_layers[idy][idx].init(opts.hiddenSize, opts.dropProb, mem);
 			}
 		}
 
@@ -83,12 +83,12 @@ public:
 			_word_window_layers[idy].init(opts.hiddenSize, opts.wordContext, mem);
 		}
 
-		_avg_pooling.init(opts.hiddenSize, mem);
-		_max_pooling.init(opts.hiddenSize, mem);
-		_min_pooling.init(opts.hiddenSize, mem);
-		_concat.init(opts.hiddenSize * 3, mem);
+		_avg_pooling.init(opts.hiddenSize, -1, mem);
+		_max_pooling.init(opts.hiddenSize, -1, mem);
+		_min_pooling.init(opts.hiddenSize, -1, mem);
+		_concat.init(opts.hiddenSize * 3, -1, mem);
 		_neural_output.setParam(&model.olayer_linear);
-		_neural_output.init(opts.labelSize,mem);
+		_neural_output.init(opts.labelSize, -1, mem);
 	}
 
 
