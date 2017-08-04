@@ -26,7 +26,7 @@ public:
 
 
 		vector<string> vecInfo;
-		split_bychars(strLine1, vecInfo, "||| ");
+		split_bychars(strLine1, vecInfo, "|||");
 		m_instance.m_label = vecInfo[vecInfo.size() - 1];
 
 		split_bychar(vecInfo[0], m_instance.m_words, ' ');

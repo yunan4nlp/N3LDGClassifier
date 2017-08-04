@@ -258,7 +258,6 @@ void Classifier::train(const string& trainFile, const string& devFile, const str
 				predict(devExamples[idx].m_feature, result_label);
 
 				devInsts[idx].evaluate(result_label, metric_dev);
-
 				if (!m_options.outBest.empty()) {
 					curDecodeInst.copyValuesFrom(devInsts[idx]);
 					curDecodeInst.assignLabel(result_label);

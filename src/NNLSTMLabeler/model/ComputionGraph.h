@@ -14,7 +14,10 @@ public:
 	vector<LookupNode> _word_inputs;
 	WindowBuilder _word_window;
 
-	LSTM1Builder _lstm;
+	LSTM1Builder _lstm_left;
+	LSTM1Builder _lstm_right;
+
+	vector<ConcatNode> _lstm_concat;
 
 	AvgPoolNode _avg_pooling;
 	MaxPoolNode _max_pooling;
@@ -39,7 +42,10 @@ public:
 	inline void createNodes(int sent_length){
 		_word_inputs.resize(sent_length);
 		_word_window.resize(sent_length);
-		_lstm.resize(sent_length);
+		_lstm_left.resize(sent_length);
+		_lstm_right.resize(sent_length);
+
+		_lstm_concat.resize(sent_length);
 
 		_avg_pooling.setParam(sent_length);
 		_max_pooling.setParam(sent_length);
@@ -49,7 +55,8 @@ public:
 	inline void clear(){
 		_word_inputs.clear();
 		_word_window.clear();
-		_lstm.clear();
+		_lstm_left.clear();
+		_lstm_right.clear();
 	}
 
 public:
@@ -58,13 +65,15 @@ public:
 		for (int idx = 0; idx < _word_inputs.size(); idx++) {
 			_word_inputs[idx].setParam(&model.words);
 			_word_inputs[idx].init(opts.wordDim, opts.dropProb,mem);
+			_lstm_concat[idx].init(opts.hiddenSize * 2, -1, mem);
 		}
 		_word_window.init(opts.wordDim, opts.wordContext, mem);
-		_lstm.init(&model.lstm_param, opts.dropProb, true, mem);
-		_avg_pooling.init(opts.hiddenSize, -1, mem);
-		_max_pooling.init(opts.hiddenSize, -1, mem);
-		_min_pooling.init(opts.hiddenSize, -1, mem);
-		_concat.init(opts.hiddenSize * 3, -1, mem);
+		_lstm_left.init(&model.lstm_left_param, opts.dropProb, true, mem);
+		_lstm_right.init(&model.lstm_right_param, opts.dropProb, false, mem);
+		_avg_pooling.init(opts.hiddenSize * 2, -1, mem);
+		_max_pooling.init(opts.hiddenSize * 2, -1, mem);
+		_min_pooling.init(opts.hiddenSize * 2, -1, mem);
+		_concat.init(opts.hiddenSize * 3 * 2, -1, mem);
 		_neural_output.setParam(&model.olayer_linear);
 		_neural_output.init(opts.labelSize, -1, mem);
 	}
@@ -84,11 +93,16 @@ public:
 		}
 		_word_window.forward(_pcg, getPNodes(_word_inputs, words_num));
 
-		_lstm.forward(_pcg, getPNodes(_word_window._outputs, words_num));
+		_lstm_left.forward(_pcg, getPNodes(_word_window._outputs, words_num));
+		_lstm_right.forward(_pcg, getPNodes(_word_window._outputs, words_num));
 
-		_avg_pooling.forward(_pcg, getPNodes(_lstm._hiddens, words_num));
-		_max_pooling.forward(_pcg, getPNodes(_lstm._hiddens, words_num));
-		_min_pooling.forward(_pcg, getPNodes(_lstm._hiddens, words_num));
+		for (int i = 0; i < words_num; i++) {
+			_lstm_concat[i].forward(_pcg, &_lstm_left._hiddens[i], &_lstm_right._hiddens[i]);
+		}
+
+		_avg_pooling.forward(_pcg, getPNodes(_lstm_concat, words_num));
+		_max_pooling.forward(_pcg, getPNodes(_lstm_concat, words_num));
+		_min_pooling.forward(_pcg, getPNodes(_lstm_concat, words_num));
 		_concat.forward(_pcg, &_avg_pooling, &_max_pooling, &_min_pooling);
 		_neural_output.forward(_pcg, &_concat);
 		

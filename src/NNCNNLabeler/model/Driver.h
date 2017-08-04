@@ -126,7 +126,6 @@ public:
     _cg.clearValue();
     _builders[0].forward(feature);
 		_cg.compute();
-
 		_modelparams.loss.predict(&_builders[0]._neural_output, result);
 	}
 
@@ -143,7 +142,7 @@ public:
 
 	void updateModel() {
 		//_ada.update();
-		_ada.update(10);
+		_ada.update(10.0);
 	}
 
 	void checkgrad(const vector<Example>& examples, int iter){

@@ -9,7 +9,8 @@ public:
 	Alphabet wordAlpha; // should be initialized outside
 	LookupTable words; // should be initialized outside
 	Alphabet featAlpha;
-	LSTM1Params lstm_param;
+	LSTM1Params lstm_left_param;
+	LSTM1Params lstm_right_param;
 	UniParams olayer_linear; // output
 public:
 	Alphabet labelAlpha; // should be initialized outside
@@ -27,8 +28,9 @@ public:
 		opts.wordWindow = opts.wordContext * 2 + 1;
 		opts.windowOutput = opts.wordDim * opts.wordWindow;
 		opts.labelSize = labelAlpha.size();
-		lstm_param.initial(opts.hiddenSize, opts.windowOutput, mem);
-		opts.inputSize = opts.hiddenSize * 3;
+		lstm_left_param.initial(opts.hiddenSize, opts.windowOutput, mem);
+		lstm_right_param.initial(opts.hiddenSize, opts.windowOutput, mem);
+		opts.inputSize = opts.hiddenSize * 3 * 2;
 		olayer_linear.initial(opts.labelSize, opts.inputSize, false, mem);
 		return true;
 	}
@@ -49,39 +51,20 @@ public:
 
 	void exportModelParams(ModelUpdate& ada){
 		words.exportAdaParams(ada);
-		lstm_param.exportAdaParams(ada);
+		lstm_left_param.exportAdaParams(ada);
+		lstm_right_param.exportAdaParams(ada);
 		olayer_linear.exportAdaParams(ada);
 	}
 
 
 	void exportCheckGradParams(CheckGrad& checkgrad){
-		checkgrad.add(&words.E, "words E");
-		checkgrad.add(&lstm_param.input.W1, "lstm_param.input.W1 W");
-		checkgrad.add(&lstm_param.cell.W1, "lstm_param.cell.W1 W");
-		checkgrad.add(&lstm_param.output.W1, "lstm_param.output.W1 W");
-
-		checkgrad.add(&lstm_param.input.W2, "lstm_param.input.W2 W");
-		checkgrad.add(&lstm_param.cell.W2, "lstm_param.cell.W2 W");
-		checkgrad.add(&lstm_param.output.W2, "lstm_param.output.W2 W");
-
-		checkgrad.add(&olayer_linear.W, "output layer W");
 	}
 
 	// will add it later
 	void saveModel(std::ofstream &os) const{
-		wordAlpha.write(os);
-		words.save(os);
-		lstm_param.save(os);
-		olayer_linear.save(os);
-		labelAlpha.write(os);
 	}
 
 	void loadModel(std::ifstream &is, AlignedMemoryPool* mem = NULL){
-		wordAlpha.read(is);
-		words.load(is, &wordAlpha, mem);
-		lstm_param.load(is, mem);
-		olayer_linear.load(is, mem);
-		labelAlpha.read(is);
 	}
 
 };
