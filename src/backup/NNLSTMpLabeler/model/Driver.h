@@ -16,7 +16,7 @@
 
 class Driver{
 public:
-	Driver(){
+	Driver(int memsize) :_aligned_mem(memsize){
 
 	}
 
@@ -33,6 +33,7 @@ public:
 	Metric _eval;
 	CheckGrad _checkgrad;
 	ModelUpdate _ada;  // model update
+	AlignedMemoryPool _aligned_mem;
 
 
 public:
@@ -42,7 +43,7 @@ public:
 			std::cout << "hyper parameter initialization Error, Please check!" << std::endl;
 			return;
 		}
-		if (!_modelparams.initial(_hyperparams)){
+		if (!_modelparams.initial(_hyperparams, &_aligned_mem)){
 			std::cout << "model parameter initialization Error, Please check!" << std::endl;
 			return;
 		}
@@ -55,7 +56,7 @@ public:
 
     for (int idx = 0; idx < _hyperparams.batch; idx++) {
       _builders[idx].createNodes(GraphBuilder::max_sentence_length);
-      _builders[idx].initial(&_cg, _modelparams, _hyperparams);
+      _builders[idx].initial(&_cg, _modelparams, _hyperparams, &_aligned_mem);
     }
 
 		setUpdateParameters(_hyperparams.nnRegular, _hyperparams.adaAlpha, _hyperparams.adaEps);
@@ -63,6 +64,14 @@ public:
 
 
   inline void TestInitial() {
+    if (!_hyperparams.bValid()) {
+      std::cout << "hyper parameter initialization Error, Please check!" << std::endl;
+      return;
+    }
+    if (!_modelparams.TestInitial(_hyperparams, &_aligned_mem)) {
+      std::cout << "model parameter initialization Error, Please check!" << std::endl;
+      return;
+    }
     _modelparams.exportModelParams(_ada);
     //_modelparams.exportCheckGradParams(_checkgrad);
 
@@ -72,7 +81,7 @@ public:
 
     for (int idx = 0; idx < _hyperparams.batch; idx++) {
       _builders[idx].createNodes(GraphBuilder::max_sentence_length);
-      _builders[idx].initial(&_cg, _modelparams, _hyperparams);
+      _builders[idx].initial(&_cg, _modelparams, _hyperparams, &_aligned_mem);
     }
 
     setUpdateParameters(_hyperparams.nnRegular, _hyperparams.adaAlpha, _hyperparams.adaEps);
@@ -117,6 +126,7 @@ public:
     _cg.clearValue();
     _builders[0].forward(feature);
 		_cg.compute();
+
 		_modelparams.loss.predict(&_builders[0]._neural_output, result);
 	}
 
@@ -133,7 +143,7 @@ public:
 
 	void updateModel() {
 		//_ada.update();
-		_ada.update(10.0);
+		_ada.update(10);
 	}
 
 	void checkgrad(const vector<Example>& examples, int iter){

@@ -11,6 +11,7 @@ public:
 	{
 		m_words.clear();
 		m_label.clear();
+		m_chars.clear();
 		m_sparse_feats.clear();
 	}
 
@@ -26,6 +27,7 @@ public:
 		allocate(anInstance.size());
 		m_label = anInstance.m_label;
 		m_words = anInstance.m_words;
+		m_chars = anInstance.m_chars;
 		m_sparse_feats = anInstance.m_sparse_feats;
 	}
 
@@ -44,6 +46,7 @@ public:
 	}
 public:
 	vector<string> m_words;
+	vector <vector<string> >m_chars;
 	vector<string> m_sparse_feats;
 	string m_label;
 };

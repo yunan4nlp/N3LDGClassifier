@@ -18,6 +18,7 @@ class Classifier {
 
 public:
 	unordered_map<string, int> m_word_stats;
+	unordered_map<string, int> m_char_stats;
 	unordered_map<string, int> m_feat_stats;
 
 public:
@@ -29,7 +30,7 @@ public:
 
 
 public:
-	Classifier();
+	Classifier(int memsize);
 	virtual ~Classifier();
 
 public:

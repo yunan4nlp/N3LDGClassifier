@@ -52,21 +52,21 @@ public:
 	}
 
 public:
-	inline void initial(Graph* pcg, ModelParams& model, HyperParams& opts, AlignedMemoryPool* mem = NULL){
+	inline void initial(Graph* pcg, ModelParams& model, HyperParams& opts){
     _pcg = pcg;
 		for (int idx = 0; idx < _word_inputs.size(); idx++) {
 			_word_inputs[idx].setParam(&model.words);
-			_word_inputs[idx].init(opts.wordDim, opts.dropProb, mem);
+			_word_inputs[idx].init(opts.wordDim, opts.dropProb);
 			_hidden[idx].setParam(&model.hidden_linear);
-			_hidden[idx].init(opts.hiddenSize, opts.dropProb, mem);
+			_hidden[idx].init(opts.hiddenSize, opts.dropProb);
 		}
-		_word_window.init(opts.wordDim, opts.wordContext, mem);
-		_avg_pooling.init(opts.hiddenSize, -1, mem);
-		_max_pooling.init(opts.hiddenSize, -1, mem);
-		_min_pooling.init(opts.hiddenSize, -1, mem);
-		_concat.init(opts.hiddenSize * 3, -1, mem);
+		_word_window.init(opts.wordDim, opts.wordContext);
+		_avg_pooling.init(opts.hiddenSize, -1);
+		_max_pooling.init(opts.hiddenSize, -1);
+		_min_pooling.init(opts.hiddenSize, -1);
+		_concat.init(opts.hiddenSize * 3, -1);
 		_neural_output.setParam(&model.olayer_linear);
-		_neural_output.init(opts.labelSize, -1, mem);
+		_neural_output.init(opts.labelSize, -1);
 	}
 
 

@@ -15,6 +15,7 @@ class Options {
 public:
 
 	int wordCutOff;
+	int charCutOff;
 	int featCutOff;
 	dtype initRange;
 	int maxIter;
@@ -29,6 +30,11 @@ public:
 	int wordcontext;
 	bool wordEmbFineTune;
 
+	int charHiddenSize;
+	int charEmbSize;
+	int charcontext;
+	bool charEmbFineTune;
+
 
 
 	int cnnLayerSize;
@@ -42,9 +48,11 @@ public:
 
 	//embedding files
 	string wordFile;
+	string charFile;
 
 	Options() {
 		wordCutOff = 0;
+		charCutOff = 0;
 		featCutOff = 0;
 		initRange = 0.01;
 		maxIter = 1000;
@@ -59,6 +67,11 @@ public:
 		wordcontext = 2;
 		wordEmbFineTune = true;
 
+		charHiddenSize = 100;
+		charEmbSize = 50;
+		charcontext = 2;
+		charEmbFineTune = true;
+
 		cnnLayerSize = 2;
 		verboseIter = 100;
 		saveIntermediate = true;
@@ -69,6 +82,7 @@ public:
 		seg = false;
 
 		wordFile = "";
+		charFile = "";
 	}
 
 	virtual ~Options() {
@@ -82,6 +96,8 @@ public:
 			string2pair(vecOption[i], pr, '=');
 			if (pr.first == "wordCutOff")
 				wordCutOff = atoi(pr.second.c_str());
+			if (pr.first == "charCutOff")
+				charCutOff = atoi(pr.second.c_str());
 			if (pr.first == "featCutOff")
 				featCutOff = atoi(pr.second.c_str());
 			if (pr.first == "initRange")
@@ -108,6 +124,16 @@ public:
 			if (pr.first == "wordEmbFineTune")
 				wordEmbFineTune = (pr.second == "true") ? true : false;
 
+
+			if (pr.first == "charHiddenSize")
+				charHiddenSize = atoi(pr.second.c_str());
+			if (pr.first == "charcontext")
+				charcontext = atoi(pr.second.c_str());
+			if (pr.first == "charEmbSize")
+				charEmbSize = atoi(pr.second.c_str());
+			if (pr.first == "charEmbFineTune")
+				charEmbFineTune = (pr.second == "true") ? true : false;
+
 			if (pr.first == "cnnLayerSize")
 				cnnLayerSize = atoi(pr.second.c_str());
 			if (pr.first == "verboseIter")
@@ -127,11 +153,14 @@ public:
 
 			if (pr.first == "wordFile")
 				wordFile = pr.second;
+			if (pr.first == "charFile")
+				charFile = pr.second;
 		}
 	}
 
 	void showOptions() {
 		std::cout << "wordCutOff = " << wordCutOff << std::endl;
+		std::cout << "charCutOff = " << charCutOff << std::endl;
 		std::cout << "featCutOff = " << featCutOff << std::endl;
 		std::cout << "initRange = " << initRange << std::endl;
 		std::cout << "maxIter = " << maxIter << std::endl;
@@ -146,6 +175,12 @@ public:
 		std::cout << "wordcontext = " << wordcontext << std::endl;
 		std::cout << "wordEmbFineTune = " << wordEmbFineTune << std::endl;
 
+
+		std::cout << "charHiddenSize = " << charHiddenSize << std::endl;
+		std::cout << "charEmbSize = " << charEmbSize << std::endl;
+		std::cout << "charcontext = " << charcontext << std::endl;
+		std::cout << "charEmbFineTune = " << charEmbFineTune << std::endl;
+
 		std::cout << "cnnLayerSize = " << cnnLayerSize << std::endl;
 		std::cout << "verboseIter = " << verboseIter << std::endl;
 		std::cout << "saveItermediate = " << saveIntermediate << std::endl;
@@ -158,6 +193,7 @@ public:
 		std::cout << "seg = " << seg << std::endl;
 
 		std::cout << "wordFile = " << wordFile << std::endl;
+		std::cout << "charFile = " << charFile << std::endl;
 	}
 
 	void load(const std::string& infile) {

@@ -10,11 +10,13 @@ class Feature
 {
 public:
 	vector<string> m_words;
+	vector<vector<string> > m_chars;
 	vector<string> m_sparse_feats;
 public:
 	void clear()
 	{
 		m_words.clear();
+		m_chars.clear();
 		m_sparse_feats.clear();
 	}
 };

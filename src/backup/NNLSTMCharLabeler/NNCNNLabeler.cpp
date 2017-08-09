@@ -3,7 +3,7 @@
 #include <chrono>
 #include "Argument_helper.h"
 
-Classifier::Classifier(){
+Classifier::Classifier(int memsize) :m_driver(memsize){
 	// TODO Auto-generated constructor stub
 	srand(0);
 }
@@ -28,6 +28,7 @@ int Classifier::createAlphabet(const vector<Instance>& vecInsts) {
 
 		const vector<string> &words = pInstance->m_words;
 		const vector<string> &sparse_feats = pInstance->m_sparse_feats;
+		const vector<vector<string> > &chars = pInstance->m_chars;
 		const string &label = pInstance->m_label;
 
 		m_driver._modelparams.labelAlpha.from_string(label);
@@ -36,7 +37,13 @@ int Classifier::createAlphabet(const vector<Instance>& vecInsts) {
 		{
 			string curword = normalize_to_lowerwithdigit(words[i]);
 			m_word_stats[curword]++;
+			int char_size = chars[i].size();
+			for (int j = 0; j < char_size; j++) {
+				string curchar = normalize_to_lowerwithdigit(chars[i][j]);
+				m_char_stats[curchar]++;
+			}
 		}
+
 		int feats_num = sparse_feats.size();
 		for(int i = 0; i < feats_num; i++)
 		{
@@ -60,6 +67,7 @@ int Classifier::createAlphabet(const vector<Instance>& vecInsts) {
 	cout << "Label num: " << m_driver._modelparams.labelAlpha.size() << endl;
 	cout << "Sparse Feature num: " << m_feat_stats.size() << endl;
 	cout << "Word num: " << m_word_stats.size() << endl;
+	cout << "Char num: " << m_char_stats.size() << endl;
 	m_driver._modelparams.labelAlpha.set_fixed_flag(true);
 
 	return 0;
@@ -73,10 +81,18 @@ int Classifier::addTestAlpha(const vector<Instance>& vecInsts) {
 		const Instance *pInstance = &vecInsts[numInstance];
 
 		const vector<string> &words = pInstance->m_words;
+		const vector<vector<string> > &chars = pInstance->m_chars;
 		int curInstSize = words.size();
 		for (int i = 0; i < curInstSize; ++i) {
 			string curword = normalize_to_lowerwithdigit(words[i]);
 			if (!m_options.wordEmbFineTune)m_word_stats[curword]++;
+
+			int char_size = chars[i].size();
+			for (int j = 0; j < char_size; j++) {
+				string curchar = normalize_to_lowerwithdigit(chars[i][j]);
+				if(!m_options.charEmbFineTune)m_char_stats[curchar]++;
+			}
+
 		}
 
 		if ((numInstance + 1) % m_options.verboseIter == 0) {
@@ -99,6 +115,7 @@ void Classifier::extractFeature(Feature& feat, const Instance* pInstance) {
 	feat.clear();
 	feat.m_words = pInstance->m_words;
 	feat.m_sparse_feats = pInstance->m_sparse_feats;
+	feat.m_chars = pInstance->m_chars;
 }
 
 void Classifier::convert2Example(const Instance* pInstance, Example& exam) {
@@ -183,13 +200,26 @@ void Classifier::train(const string& trainFile, const string& devFile, const str
 
 	m_word_stats[unknownkey] = m_options.wordCutOff + 1;
 	m_driver._modelparams.wordAlpha.initial(m_word_stats, m_options.wordCutOff);
+
+	m_char_stats[unknownkey] = m_options.charCutOff + 1;
+	m_driver._modelparams.charAlpha.initial(m_char_stats, m_options.charCutOff);
+
 	m_feat_stats[unknownkey] = m_options.featCutOff + 1;
 	m_driver._modelparams.featAlpha.initial(m_feat_stats, m_options.featCutOff);
+	m_driver._hyperparams.hyper_word_stats = &m_word_stats;
+
 	if (m_options.wordFile != "") {
 		m_driver._modelparams.words.initial(&m_driver._modelparams.wordAlpha, m_options.wordFile, m_options.wordEmbFineTune);
 	}
 	else{
 		m_driver._modelparams.words.initial(&m_driver._modelparams.wordAlpha, m_options.wordEmbSize, m_options.wordEmbFineTune);
+	}
+
+	if (m_options.charFile != "") {
+		m_driver._modelparams.chars.initial(&m_driver._modelparams.charAlpha, m_options.charFile, m_options.charEmbFineTune);
+	}
+	else{
+		m_driver._modelparams.chars.initial(&m_driver._modelparams.charAlpha, m_options.charEmbSize, m_options.charEmbFineTune);
 	}
 
 	m_driver._hyperparams.setRequared(m_options);
@@ -258,6 +288,7 @@ void Classifier::train(const string& trainFile, const string& devFile, const str
 				predict(devExamples[idx].m_feature, result_label);
 
 				devInsts[idx].evaluate(result_label, metric_dev);
+
 				if (!m_options.outBest.empty()) {
 					curDecodeInst.copyValuesFrom(devInsts[idx]);
 					curDecodeInst.assignLabel(result_label);
@@ -385,7 +416,7 @@ void Classifier::loadModelFile(const string& inputModelFile) {
 	ifstream is(inputModelFile);
 	if (is.is_open()) {
 		m_driver._hyperparams.loadModel(is);
-		m_driver._modelparams.loadModel(is);
+		m_driver._modelparams.loadModel(is, &m_driver._aligned_mem);
 		is.close();
 	}
 	else
@@ -421,19 +452,20 @@ int main(int argc, char* argv[]) {
 	ah.new_named_string("model", "modelFile", "named_string", "model file, must when training and testing", modelFile);
 	ah.new_named_string("option", "optionFile", "named_string", "option file to train a model, optional when training", optionFile);
 	ah.new_named_string("output", "outputFile", "named_string", "output file to test, must when testing", outputFile);
+	ah.new_named_int("memsize", "memorySize", "named_int", "This argument decides the size of static memory allocation", memsize);
 
 	ah.process(argc, argv);
 
 	if (memsize < 0)
 		memsize = 0;
-	Classifier the_classifier;
+	Classifier the_classifier(memsize);
 	if (bTrain) {
 		the_classifier.train(trainFile, devFile, testFile, modelFile, optionFile);
 	}
 	else {
 		the_classifier.test(testFile, outputFile, modelFile);
 	}
-	getchar();
+	//getchar();
 	//test(argv);
 	//ah.write_values(std::cout);
 }

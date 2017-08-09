@@ -29,7 +29,7 @@ public:
 
 
 public:
-	Classifier();
+	Classifier(int memsize);
 	virtual ~Classifier();
 
 public:
