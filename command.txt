@@ -5,3 +5,7 @@ cmake .. -DEIGEN3_DIR=E:\vs_workspace\N3LDG_Debug\eigen  -DN3LDG_DIR=E:\vs_works
 -l -train data\phone_data\phone_train.txt -dev data\phone_data\phone_dev.txt -test data\phone_data\phone_test.txt -option data\phone_data\option.debug
 
 -l -train data\raw.clean.train -dev data\raw.clean.dev -test data\raw.clean.test -option data\option.debug
+
+-l -train data\sample.txt -dev data\sample.txt -test data\sample.txt -option data\option.debug -model data\model
+
+-test data\sample.txt -model data\model

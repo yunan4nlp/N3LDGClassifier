@@ -34,7 +34,7 @@ public:
 		m_instance.m_words.resize(vecInfo.size() - 1);
 		int word_size = vecInfo.size() - 1;
 		for (int idx = 0; idx < word_size; idx++)
-			m_instance.m_words[idx] = vecInfo[idx];
+			m_instance.m_words[idx] = normalize_to_lowerwithdigit(vecInfo[idx]);
 
 		int word_num = m_instance.m_words.size();
 		m_instance.m_chars.resize(word_num);
